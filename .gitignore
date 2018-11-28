@@ -1,0 +1,3 @@
+# model & data
+*.h5
+data/
