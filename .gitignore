@@ -1,3 +1,4 @@
 # model & data
 *.h5
 data
+*.DS_Store
