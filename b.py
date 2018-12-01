@@ -10,7 +10,7 @@ from keras.models import Model, load_model
 from keras import metrics
 from keras import backend as K
 from scipy.misc import imsave
-import argparse
+import argparse, random
 
 #random multiplier
 m = [0.5,0.7,0.8,1,1.2,1.3,1.5]
@@ -37,7 +37,7 @@ if args.type == "test" and not args.model and not args.image:
     parser.error("test needs image & model")
 
 def random_multiplier():
-    return np.random.choice(args.mult)
+    return random.sample(args.mult, k=1)
 
 
 def hue_shift(img, amount):
@@ -94,7 +94,7 @@ def preprocess(img_dir, width=args.shape[0], height=args.shape[1]):
 
 def gen_data(datas, mode=color_shift, batch_size=1):
     while True:
-        ix = np.random.choice(np.arange(len(datas)), batch_size)
+        ix = random.sample(np.arange(len(datas)), k=batch_size)
         x_list = []
         y_list = []
         for i in ix:
