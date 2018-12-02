@@ -9,6 +9,7 @@ from keras.optimizers import Adam
 from keras.models import Model, load_model
 from keras import metrics
 from keras import backend as K
+from keras.callbacks import ModelCheckpoint
 from scipy.misc import imsave
 import argparse
 
@@ -193,15 +194,6 @@ def train():
     xs,ys = next(gen)
     model = network()
 
-    if args.loss=="l1l2":
-        model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99\
-            , epsilon=1e-8, clipnorm=10.), loss=l1l2)
-    else:
-        model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99\
-            , epsilon=1e-8, clipnorm=10.), loss=args.loss)
-    model.summary()
-    model.fit_generator(gen, steps_per_epoch=args.steps, epochs=args.epoch)
-
     if args.loss == l1:
         alias = "l1"
     elif args.loss == l2:
@@ -209,11 +201,28 @@ def train():
     else:
         alias = "mix"
 
-    output_model = f"b{args.shape[0]}x{args.shape[1]}_"\
-                    f"s{args.steps}e{args.epoch}_{alias}.h5"
+    if args.loss=="l1l2":
+        model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99\
+            , epsilon=1e-8, clipnorm=10.), loss=l1l2)
+    else:
+        model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99\
+            , epsilon=1e-8, clipnorm=10.), loss=args.loss)
 
-    model.save(output_model)
-    print(f"model is saved as {output_model}")
+    filepath = f"dim{args.shape[0]}x{args.shape[1]}_{alias}_s{args.steps}+"\
+                "e{epoch:02d}_loss[{loss:.2f}].h5"
+    checkpoint = ModelCheckpoint(filepath, monitor='loss',save_best_only=True)
+
+    model.summary()
+    model.fit_generator(gen, steps_per_epoch=args.steps\
+                        , epochs=args.epoch, callbacks=[checkpoint])
+
+    
+
+    # output_model = f"b{args.shape[0]}x{args.shape[1]}_"\
+    #                 f"s{args.steps}e{args.epoch}_{alias}.h5"
+
+    # model.save(output_model)
+    # print(f"model is saved as {output_model}")
 
 def test():
         # model = load_model(model_file)
