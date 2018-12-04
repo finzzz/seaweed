@@ -213,10 +213,8 @@ def train():
 
 
 def test():
-        # model = load_model(model_file)
         model = load_model(args.model, custom_objects={'l1l2': l1l2})
-        # model.summary()
-
+        
         if args.loss == "mix":
             model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99, epsilon=1e-8\
                     , clipnorm=10.), loss=l1l2)
