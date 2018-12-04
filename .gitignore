@@ -3,6 +3,6 @@
 data
 *.DS_Store
 models
-11.jpg
-4.jpg
-5.png
+a_models
+*.jpg
+*.png
