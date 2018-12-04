@@ -76,11 +76,6 @@ def downscale(img, factor=8):
 def preprocess(img_dir, width=args.shape[0], height=args.shape[1]):
     y = im.open(img_dir)
     y = y.convert('RGBA')
-    # width = y.width
-    # height = y.height
-
-    # width = math.floor(width/32)*32
-    # height = math.floor(height/32)*32
 
     y = y.resize((width,height), resample=im.BICUBIC)
 
@@ -231,9 +226,11 @@ def test():
                 
         x,y = preprocess(args.image)
 
-        name = (args.image).split(".")[1]
+        name = (args.image).split("/")[2].split(".")[0]
         imsave(name+'_x.png',x)
-        imsave(name+'_truth.png',y)
+
+        if args.mult[0] != 1:
+            imsave(name+'_truth.png',y)
 
         x = np.reshape(x,[1,args.shape[1],args.shape[0],4])
         image = np.array(model.predict(x))[0]
