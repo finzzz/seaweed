@@ -216,13 +216,6 @@ def train():
     model.fit_generator(gen, steps_per_epoch=args.steps\
                         , epochs=args.epoch, callbacks=[checkpoint])
 
-    
-
-    # output_model = f"b{args.shape[0]}x{args.shape[1]}_"\
-    #                 f"s{args.steps}e{args.epoch}_{alias}.h5"
-
-    # model.save(output_model)
-    # print(f"model is saved as {output_model}")
 
 def test():
         # model = load_model(model_file)
@@ -238,7 +231,7 @@ def test():
                 
         x,y = preprocess(args.image)
 
-        name = args.image.split(".")[0]
+        name = (args.image).split(".")[1]
         imsave(name+'_x.png',x)
         imsave(name+'_truth.png',y)
 
