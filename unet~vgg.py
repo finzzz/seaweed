@@ -21,6 +21,8 @@ channels = 3
 # m = [0.5,0.7,0.8,1,1.2,1.3,1.5]
 m_true = 0.4 # default 1
 m = [0.1,0.2,0.3,0.4]
+# m = [0.4,0.5,0.6,0.7] #m_true = 0.75
+# m = [0.75,0.9,1,1.1]
 
 #default loss: 
 l1 = "mean_absolute_error"
