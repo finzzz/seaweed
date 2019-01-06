@@ -14,7 +14,9 @@ from scipy.misc import imsave
 import argparse
 
 #random multiplier
-m = [0.5,0.7,0.8,1,1.2,1.3,1.5]
+# m = [0.5,0.7,0.8,1,1.2,1.3,1.5]
+m_true = 0.4 # default 1
+m = [0.1,0.2,0.3,0.4]
 
 #default loss: 
 l1 = "mean_absolute_error"
@@ -81,6 +83,7 @@ def preprocess(img_dir, width=args.shape[0], height=args.shape[1]):
 
     factor = random_multiplier()
     x = color_shift(y, factor)
+    y = color_shift(y, m_true)
 
     x = np.asarray(x, dtype=np.uint8)
     y = np.asarray(y, dtype=np.uint8)
@@ -213,26 +216,26 @@ def train():
 
 
 def test():
-        model = load_model(args.model, custom_objects={'l1l2': l1l2})
-        
-        if args.loss == "mix":
-            model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99, epsilon=1e-8\
-                    , clipnorm=10.), loss=l1l2)
-        else:
-            model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99, epsilon=1e-8\
-                    , clipnorm=10.), loss=args.loss)
-                
-        x,y = preprocess(args.image)
+    model = load_model(args.model, custom_objects={'l1l2': l1l2})
+    
+    if args.loss == "mix":
+        model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99, epsilon=1e-8\
+                , clipnorm=10.), loss=l1l2)
+    else:
+        model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99, epsilon=1e-8\
+                , clipnorm=10.), loss=args.loss)
+            
+    x,y = preprocess(args.image)
 
-        name = (args.image).split("/")[2].split(".")[0]
-        imsave(name+'_x.png',x)
+    name = (args.image).split("/")[2].split(".")[0]
+    imsave(name+'_x.png',x)
 
-        if args.mult[0] != 1:
-            imsave(name+'_truth.png',y)
+    if args.mult[0] != 1:
+        imsave(name+'_truth.png',y)
 
-        x = np.reshape(x,[1,args.shape[1],args.shape[0],4])
-        image = np.array(model.predict(x))[0]
-        imsave(name+'_y.png', image)
+    x = np.reshape(x,[1,args.shape[1],args.shape[0],4])
+    image = np.array(model.predict(x))[0]
+    imsave(name+'_y.png', image)
 
 if __name__ == "__main__":
     if args.type == "train":

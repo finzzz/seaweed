@@ -18,7 +18,9 @@ import argparse
 channels = 3
 
 #random multiplier
-m = [0.5,0.7,0.8,1,1.2,1.3,1.5]
+# m = [0.5,0.7,0.8,1,1.2,1.3,1.5]
+m_true = 0.4 # default 1
+m = [0.1,0.2,0.3,0.4]
 
 #default loss: 
 l1 = "mean_absolute_error"
@@ -87,6 +89,7 @@ def preprocess(img_dir, width=args.shape[0], height=args.shape[1]):
 
     factor = random_multiplier()
     x = color_shift(y, factor)
+    y = color_shift(y, m_true)
 
     x = np.asarray(x, dtype=np.uint8)
     y = np.asarray(y, dtype=np.uint8)
@@ -240,14 +243,14 @@ def test():
 
     # name = (args.image).split("/")[2].split(".")[0]
     name = ""
-    # imsave(name+'_x.png',x)
+    imsave(name+'_x.png',x)
 
-    # if args.mult[0] != 1:
-    #     imsave(name+'_truth.png',y)
+    if args.mult[0] != 1:
+        imsave(name+'_truth.png',y)
 
     x = np.reshape(x,[1,args.shape[1],args.shape[0],channels])
     image = np.array(unet.predict(x))[0]
-    # imsave(name+'_y.png', image)
+    imsave(name+'_y.png', image)
 
 if __name__ == "__main__":
     if args.type == "train":
