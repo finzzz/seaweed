@@ -12,9 +12,7 @@ from keras.callbacks import ModelCheckpoint
 from scipy.misc import imsave
 
 #random multiplier
-# m = [0.5,0.7,0.8,1,1.2,1.3,1.5]
-m_true = 0.4 # default 1
-m = [0.1,0.2,0.3,0.4]
+m = [0.5,0.7,0.8,1,1.2,1.3,1.5]
 
 #default loss: 
 l1 = "mean_absolute_error"
@@ -25,11 +23,15 @@ parser.add_argument("type", help="train/test model", choices=["train","test","co
 parser.add_argument("-mod","--model",help="model.h5 file")
 parser.add_argument("-i","--image",help="image to test")
 parser.add_argument("-mu","--mult", help="multiplier factor",nargs="+", type=float, default=m)
+parser.add_argument("-mt","--true_m", help="multiplier factor (true)",type=float, default=1)
 parser.add_argument("-sh", "--shape", help="image shape [width,height]", type=int, nargs=2, default=[128,96])
 parser.add_argument("-l","--loss", help="loss function, l1,l2,l1l2", default=l2)
 parser.add_argument("-st","--steps", help="steps per epoch", type=int, default=180)
 parser.add_argument("-e","--epoch", help="number of epoch", type=int, default=3)
 args = parser.parse_args()
+
+m_true = args.true_m
+m = args.mult
 
 if args.loss == "l1":
     args.loss = l1
@@ -171,7 +173,7 @@ def train(continue_flag=False):
 
     if args.loss == l1:
         alias = "l1"
-    else args.loss == l2:
+    elif args.loss == l2:
         alias = "l2"
 
     model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99\
@@ -192,7 +194,7 @@ def test():
             
     x,y = preprocess(args.image)
 
-    name = (args.image).split("/")[2].split(".")[0]
+    name = (args.image).split("/")[1].split(".")[0]
     imsave(name+'_x.png',x)
 
     if args.mult[0] != 1:
