@@ -11,9 +11,6 @@ from keras import backend as K
 from keras.callbacks import ModelCheckpoint
 from scipy.misc import imsave
 
-#random multiplier
-m = [0.5,0.7,0.8,1,1.2,1.3,1.5]
-
 #default loss: 
 l1 = "mean_absolute_error"
 l2 = "mean_squared_error"
@@ -22,7 +19,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("type", help="train/test/continue train model", choices=["train","test","continue"])
 parser.add_argument("-mod","--model",help="model.h5 file")
 parser.add_argument("-i","--image",help="image to test")
-parser.add_argument("-mu","--mult", help="multiplier factor",nargs="+", type=float, default=m)
+parser.add_argument("-mu","--mult", help="multiplier factor",nargs="+", type=float, default=[0.5,0.7,0.8,1,1.2,1.3,1.5])
 parser.add_argument("-mt","--true_m", help="multiplier factor (true)",type=float, default=1)
 parser.add_argument("-sh", "--shape", help="image shape [width,height]", type=int, nargs=2, default=[128,96])
 parser.add_argument("-l","--loss", help="loss function, l1,l2,l1l2", default=l2)
@@ -30,18 +27,31 @@ parser.add_argument("-st","--steps", help="steps per epoch", type=int, default=1
 parser.add_argument("-e","--epoch", help="number of epoch", type=int, default=3)
 args = parser.parse_args()
 
+# multiplier
 m_true = args.true_m
 m = args.mult
 
+# channels
+channels = 4
+
+# shape
+width = args.shape[0]
+height= args.shape[1]
+
 if args.loss == "l1":
     args.loss = l1
+
+# alias
+if args.loss == l1:
+    alias = "l1"
+elif args.loss == l2:
+    alias = "l2"
 
 if args.type == "test" and not args.model and not args.image:
     parser.error("test needs image & model")
 
 def random_multiplier():
     return np.random.choice(args.mult)
-
 
 def hue_shift(img, amount):
     # img = path to image
@@ -63,7 +73,7 @@ def downscale(img, factor=8):
     height = int(img.height/factor)
     return img.resize([width,height], resample=im.BICUBIC)
 
-def preprocess(img_dir, width=args.shape[0], height=args.shape[1]):
+def preprocess(img_dir):
     y = im.open(img_dir)
     y = y.convert('RGBA')
 
@@ -97,9 +107,9 @@ def conv_lr(layer_x, filters, act=LeakyReLU, use_bias=False):
     # layer_x = act(layer_x)
     return y
 
-def network(width=args.shape[0], height=args.shape[1]):
+def network():
     # Model
-    input_layer = Input(shape=[height,width,4])
+    input_layer = Input(shape=[height,width,channels])
     res = [input_layer]
 
     #D1
@@ -158,7 +168,7 @@ def network(width=args.shape[0], height=args.shape[1]):
     u5 = conv_lr(u5,64)
     u5 = conv_lr(u5,32)
     
-    out = conv_lr(u5,4,act=ReLU,use_bias=True)
+    out = conv_lr(u5,channels,act=ReLU,use_bias=True)
 
     return Model(input_layer, out)
 
@@ -171,15 +181,10 @@ def train(continue_flag=False):
     else:
         model = network()
 
-    if args.loss == l1:
-        alias = "l1"
-    elif args.loss == l2:
-        alias = "l2"
-
     model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99\
             , epsilon=1e-8, clipnorm=10.), loss=args.loss)
 
-    filepath = f"dim{args.shape[0]}x{args.shape[1]}_{alias}_s{args.steps}"\
+    filepath = f"dim{width}x{height}_{alias}_s{args.steps}"\
                 "e{epoch:02d}_loss[{loss:.2f}].h5"
     checkpoint = ModelCheckpoint(filepath, monitor='loss',save_best_only=True)
 
@@ -200,7 +205,7 @@ def test():
     if args.mult[0] != 1:
         imsave(name+'_truth.png',y)
 
-    x = np.reshape(x,[1,args.shape[1],args.shape[0],4])
+    x = np.reshape(x,[1,height,width,channels])
     image = np.array(model.predict(x))[0]
     imsave(name+'_y.png', image)
 
