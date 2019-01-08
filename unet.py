@@ -2,8 +2,7 @@ from PIL import Image as im
 from PIL import ImageEnhance as en
 from PIL import ImageOps as ops
 import numpy as np
-from sklearn.model_selection import train_test_split as tts
-import glob, math
+import glob, argparse
 from keras.layers import Conv2D, Input, MaxPool2D, UpSampling2D, Concatenate, LeakyReLU,ReLU
 from keras.optimizers import Adam
 from keras.models import Model, load_model
@@ -11,7 +10,6 @@ from keras import metrics
 from keras import backend as K
 from keras.callbacks import ModelCheckpoint
 from scipy.misc import imsave
-import argparse
 
 #random multiplier
 # m = [0.5,0.7,0.8,1,1.2,1.3,1.5]
@@ -44,36 +42,24 @@ def random_multiplier():
 
 
 def hue_shift(img, amount):
+    # img = path to image
     hsv_img = img.convert('HSV')
     hsv = np.asarray(hsv_img)
     hsv.setflags(write=1)
     hsv[..., 0] = (hsv[..., 0]*amount) % 360
     new_img = im.fromarray(hsv, 'HSV')
     return new_img.convert('RGBA')
-# a = im.open('5.png')
-# a = hue_shift(a,2)
-
 
 def color_shift(img, amount):
+    # img = path to image
     enh = en.Color(img)
     return enh.enhance(amount)
-# a = im.open('60m.jpg')
-# a = color_shift(a,0.6)
-# a.show()
-
 
 def downscale(img, factor=8):
+    # img = path to image
     width = int(img.width/factor)
     height = int(img.height/factor)
     return img.resize([width,height], resample=im.BICUBIC)
-# a = im.open('5.png')
-# a = downscale(a, 4)
-
-# for data in glob.glob('data/train/*.png'):
-#     a = im.open(data)
-#     a = downscale(a, factor=2)
-#     a.save(f'data/small/{data[-10:]}')
-
 
 def preprocess(img_dir, width=args.shape[0], height=args.shape[1]):
     y = im.open(img_dir)
@@ -90,7 +76,6 @@ def preprocess(img_dir, width=args.shape[0], height=args.shape[1]):
 
     return x,y
 
-
 def gen_data(datas, mode=color_shift, batch_size=1):
     while True:
         ix = np.random.choice(np.arange(len(datas)), batch_size)
@@ -103,11 +88,6 @@ def gen_data(datas, mode=color_shift, batch_size=1):
             y_list.append(y)
 
         yield np.array(x_list), np.array(y_list)
-
-# gen = gen_data(x)
-# x,y = next(gen)
-
-# train_set , val_set = tts(data, test_size = 0.2)
 
 def conv_lr(layer_x, filters, act=LeakyReLU, use_bias=False):
     y = Conv2D(filters, kernel_size=3 \
@@ -180,10 +160,14 @@ def network(width=args.shape[0], height=args.shape[1]):
 
     return Model(input_layer, out)
 
-def train():
+def train(continue_flag=False):
     gen = gen_data(glob.glob('data/small/*.png'), batch_size=5)
     xs,ys = next(gen)
-    model = network()
+
+    if continue_flag:
+        model = load_model(args.model)
+    else:
+        model = network()
 
     if args.loss == l1:
         alias = "l1"
@@ -218,31 +202,10 @@ def test():
     image = np.array(model.predict(x))[0]
     imsave(name+'_y.png', image)
 
-def continue_train():
-    gen = gen_data(glob.glob('data/small/*.png'), batch_size=5)
-    xs,ys = next(gen)
-    model = load_model(args.model)
-
-    if args.loss == l1:
-        alias = "l1"
-    else args.loss == l2:
-        alias = "l2"
-
-    model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99\
-            , epsilon=1e-8, clipnorm=10.), loss=args.loss)
-
-    filepath = f"dim{args.shape[0]}x{args.shape[1]}_{alias}_s{args.steps}"\
-                "e{epoch:02d}_loss[{loss:.2f}].h5"
-    checkpoint = ModelCheckpoint(filepath, monitor='loss',save_best_only=True)
-
-    model.fit_generator(gen, steps_per_epoch=args.steps\
-                        , epochs=args.epoch, callbacks=[checkpoint])
-
-
 if __name__ == "__main__":
     if args.type == "train":
         train()
     elif args.type == "test":
         test()
     elif args.type == "continue":
-        continue_train
+        train(continue_flag=True)
