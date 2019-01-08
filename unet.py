@@ -23,7 +23,7 @@ l1 = "mean_absolute_error"
 l2 = "mean_squared_error"
 
 parser = argparse.ArgumentParser()
-parser.add_argument("type", help="train/test model", choices=["train","test"])
+parser.add_argument("type", help="train/test model", choices=["train","test","continue"])
 parser.add_argument("-mod","--model",help="model.h5 file")
 parser.add_argument("-i","--image",help="image to test")
 parser.add_argument("-mu","--mult", help="multiplier factor",nargs="+", type=float, default=m)
@@ -180,13 +180,6 @@ def network(width=args.shape[0], height=args.shape[1]):
 
     return Model(input_layer, out)
 
-
-def l1l2(y_true, y_pred):
-    mae = K.mean(K.abs(y_pred - y_true), axis=-1)
-    mse = K.mean(K.square(y_pred - y_true), axis=-1)
-    return 0.5*mae+0.5*mse
-
-
 def train():
     gen = gen_data(glob.glob('data/small/*.png'), batch_size=5)
     xs,ys = next(gen)
@@ -194,35 +187,23 @@ def train():
 
     if args.loss == l1:
         alias = "l1"
-    elif args.loss == l2:
+    else args.loss == l2:
         alias = "l2"
-    else:
-        alias = "mix"
 
-    if args.loss=="l1l2":
-        model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99\
-            , epsilon=1e-8, clipnorm=10.), loss=l1l2)
-    else:
-        model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99\
+    model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99\
             , epsilon=1e-8, clipnorm=10.), loss=args.loss)
 
     filepath = f"dim{args.shape[0]}x{args.shape[1]}_{alias}_s{args.steps}"\
                 "e{epoch:02d}_loss[{loss:.2f}].h5"
     checkpoint = ModelCheckpoint(filepath, monitor='loss',save_best_only=True)
 
-    model.summary()
     model.fit_generator(gen, steps_per_epoch=args.steps\
                         , epochs=args.epoch, callbacks=[checkpoint])
 
-
 def test():
-    model = load_model(args.model, custom_objects={'l1l2': l1l2})
+    model = load_model(args.model)
     
-    if args.loss == "mix":
-        model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99, epsilon=1e-8\
-                , clipnorm=10.), loss=l1l2)
-    else:
-        model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99, epsilon=1e-8\
+    model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99, epsilon=1e-8\
                 , clipnorm=10.), loss=args.loss)
             
     x,y = preprocess(args.image)
@@ -237,8 +218,31 @@ def test():
     image = np.array(model.predict(x))[0]
     imsave(name+'_y.png', image)
 
+def continue_train():
+    gen = gen_data(glob.glob('data/small/*.png'), batch_size=5)
+    xs,ys = next(gen)
+    model = load_model(args.model)
+
+    if args.loss == l1:
+        alias = "l1"
+    else args.loss == l2:
+        alias = "l2"
+
+    model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99\
+            , epsilon=1e-8, clipnorm=10.), loss=args.loss)
+
+    filepath = f"dim{args.shape[0]}x{args.shape[1]}_{alias}_s{args.steps}"\
+                "e{epoch:02d}_loss[{loss:.2f}].h5"
+    checkpoint = ModelCheckpoint(filepath, monitor='loss',save_best_only=True)
+
+    model.fit_generator(gen, steps_per_epoch=args.steps\
+                        , epochs=args.epoch, callbacks=[checkpoint])
+
+
 if __name__ == "__main__":
     if args.type == "train":
         train()
-    else:
+    elif args.type == "test":
         test()
+    elif args.type == "continue":
+        continue_train
