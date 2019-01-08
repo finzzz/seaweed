@@ -19,7 +19,7 @@ l1 = "mean_absolute_error"
 l2 = "mean_squared_error"
 
 parser = argparse.ArgumentParser()
-parser.add_argument("type", help="train/test model", choices=["train","test","continue"])
+parser.add_argument("type", help="train/test/continue train model", choices=["train","test","continue"])
 parser.add_argument("-mod","--model",help="model.h5 file")
 parser.add_argument("-i","--image",help="image to test")
 parser.add_argument("-mu","--mult", help="multiplier factor",nargs="+", type=float, default=m)
