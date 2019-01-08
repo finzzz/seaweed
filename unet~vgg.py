@@ -2,8 +2,7 @@ from PIL import Image as im
 from PIL import ImageEnhance as en
 from PIL import ImageOps as ops
 import numpy as np
-from sklearn.model_selection import train_test_split as tts
-import glob, math
+import glob, argparse
 from keras.applications import VGG19
 from keras.layers import Conv2D, Input, MaxPool2D, UpSampling2D, Concatenate, LeakyReLU,ReLU
 from keras.optimizers import Adam
@@ -12,7 +11,6 @@ from keras import metrics
 from keras import backend as K
 from keras.callbacks import ModelCheckpoint
 from scipy.misc import imsave
-import argparse
 
 #default loss: 
 l1 = "mean_absolute_error"
