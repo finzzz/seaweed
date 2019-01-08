@@ -14,78 +14,88 @@ from keras.callbacks import ModelCheckpoint
 from scipy.misc import imsave
 import argparse
 
-# channels
-channels = 3
-
-#random multiplier
-# m = [0.5,0.7,0.8,1,1.2,1.3,1.5]
-m_true = 0.4 # default 1
-m = [0.1,0.2,0.3,0.4]
-# m = [0.4,0.5,0.6,0.7] #m_true = 0.75
-# m = [0.75,0.9,1,1.1]
-
 #default loss: 
 l1 = "mean_absolute_error"
 l2 = "mean_squared_error"
 
 parser = argparse.ArgumentParser()
-parser.add_argument("type", help="train/test model", choices=["train","test"])
+parser.add_argument("type", help="train/test/continue train model", choices=["train","test","continue"])
 parser.add_argument("-mod","--model",help="model.h5 file")
 parser.add_argument("-i","--image",help="image to test")
-parser.add_argument("-mu","--mult", help="multiplier factor",nargs="+", type=float, default=m)
+parser.add_argument("-mu","--mult", help="multiplier factor",nargs="+", type=float, default=[0.5,0.7,0.8,1,1.2,1.3,1.5])
+parser.add_argument("-mt","--true_m", help="multiplier factor (true)",type=float, default=1)
 parser.add_argument("-sh", "--shape", help="image shape [width,height]", type=int, nargs=2, default=[128,96])
 parser.add_argument("-l","--loss", help="loss function, l1,l2,l1l2", default=l2)
 parser.add_argument("-st","--steps", help="steps per epoch", type=int, default=180)
 parser.add_argument("-e","--epoch", help="number of epoch", type=int, default=3)
 args = parser.parse_args()
 
+# multiplier
+m_true = args.true_m
+m = args.mult
+
+# channels
+channels = 4
+
+# shape
+width = args.shape[0]
+height= args.shape[1]
+
 if args.loss == "l1":
     args.loss = l1
 
+# alias
+if args.loss == l1:
+    alias = "l1"
+elif args.loss == l2:
+    alias = "l2"
+
+# error handling
 if args.type == "test" and not args.model and not args.image:
     parser.error("test needs image & model")
 
-width=args.shape[0]
-height=args.shape[1]
+##### define model #####
+vgg = vgg_net()
+vgg.trainable = False
+vgg.compile(loss='mse', optimizer=Adam(0.0002, 0.5), metrics=['accuracy'])
+
+unet = network()
+
+bad_image = Input(shape=[height,width,channels])
+good_image = Input(shape=[height,width,channels])
+
+gen_img = unet(bad_image)
+bad_features = vgg(gen_img)
+
+model =  Model(bad_image,bad_features)
+##### end define model #####
 
 def random_multiplier():
     return np.random.choice(args.mult)
 
 def hue_shift(img, amount):
+    # img = path to image
     hsv_img = img.convert('HSV')
     hsv = np.asarray(hsv_img)
     hsv.setflags(write=1)
     hsv[..., 0] = (hsv[..., 0]*amount) % 360
     new_img = im.fromarray(hsv, 'HSV')
     return new_img.convert('RGBA')
-# a = im.open('5.png')
-# a = hue_shift(a,2)
-
 
 def color_shift(img, amount):
+    # img = path to image
     enh = en.Color(img)
     return enh.enhance(amount)
-# a = im.open('60m.jpg')
-# a = color_shift(a,0.6)
-# a.show()
-
 
 def downscale(img, factor=8):
+    # img = path to image
     width = int(img.width/factor)
     height = int(img.height/factor)
     return img.resize([width,height], resample=im.BICUBIC)
-# a = im.open('5.png')
-# a = downscale(a, 4)
 
-# for data in glob.glob('data/train/*.png'):
-#     a = im.open(data)
-#     a = downscale(a, factor=2)
-#     a.save(f'data/small/{data[-10:]}')
-
-
-def preprocess(img_dir, width=args.shape[0], height=args.shape[1]):
+def preprocess(img_dir):
     y = im.open(img_dir)
-    y = y.convert('RGB')
+    y = y.convert('RGBA')
 
     y = y.resize((width,height), resample=im.BICUBIC)
 
@@ -97,7 +107,6 @@ def preprocess(img_dir, width=args.shape[0], height=args.shape[1]):
     y = np.asarray(y, dtype=np.uint8)
 
     return x,y
-
 
 def gen_data(datas, mode=color_shift, batch_size=1):
     while True:
@@ -114,11 +123,6 @@ def gen_data(datas, mode=color_shift, batch_size=1):
         y_list = vgg.predict_on_batch(y_list)
 
         yield np.array(x_list), np.array(y_list)
-
-# gen = gen_data(x)
-# x,y = next(gen)
-
-# train_set , val_set = tts(data, test_size = 0.2)
 
 def conv_lr(layer_x, filters, act=LeakyReLU, use_bias=False):
     y = Conv2D(filters, kernel_size=3 \
@@ -200,25 +204,12 @@ def vgg_net():
 
     return Model(img, img_features)
 
-vgg = vgg_net()
-vgg.trainable = False
-vgg.compile(loss='mse',
-    optimizer=Adam(0.0002, 0.5),
-    metrics=['accuracy'])
-
-unet = network()
-
-bad_image = Input(shape=[height,width,channels])
-good_image = Input(shape=[height,width,channels])
-
-gen_img = unet(bad_image)
-bad_features = vgg(gen_img)
-
-model =  Model(bad_image,bad_features)
-
-def train():
+def train(continue_flag=False):
     gen = gen_data(glob.glob('data/small/*.png'), batch_size=5)
     xs,ys = next(gen)
+
+    if continue_flag:
+        model.load_weights(args.model)
 
     model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99\
             , epsilon=1e-8, clipnorm=10.), loss=l2)
@@ -231,20 +222,11 @@ def train():
     model.fit_generator(gen, steps_per_epoch=args.steps\
                         , epochs=args.epoch, callbacks=[checkpoint])
 
-
 def test():
     model.load_weights(args.model)
-    # model.summary()
-    # model.get_layer('layer_name') also works
-    # unet_layer_model = Model(inputs=model.input, outputs=model.get_layer("model_2").output)
-    
-    # model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99, epsilon=1e-8\
-    #             , clipnorm=10.), loss=l2)
-
     x,y = preprocess(args.image)
 
-    # name = (args.image).split("/")[2].split(".")[0]
-    name = ""
+    name = (args.image).split("/")[1].split(".")[0]
     imsave(name+'_x.png',x)
 
     if args.mult[0] != 1:
@@ -257,5 +239,7 @@ def test():
 if __name__ == "__main__":
     if args.type == "train":
         train()
-    else:
+    elif args.type == "test":
         test()
+    elif args.type == "continue":
+        train(continue_flag=True)
