@@ -4,7 +4,8 @@ data
 *.DS_Store
 models
 a
-a_models
+base_unetL2
+base_unetVGG
 e67
 e118
 *.jpg
