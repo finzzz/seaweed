@@ -42,7 +42,7 @@ m_true = args.true_m
 m = args.mult
 
 # channels
-channels = 4
+channels = 3
 
 # shape
 width = args.shape[0]
