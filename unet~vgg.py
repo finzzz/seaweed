@@ -174,7 +174,7 @@ def downscale(img, factor=8):
 
 def preprocess(img_dir):
     y = im.open(img_dir)
-    y = y.convert('RGBA')
+    y = y.convert('RGB')
 
     y = y.resize((width,height), resample=im.BICUBIC)
 
