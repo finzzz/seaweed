@@ -21,6 +21,12 @@ def vgg_net():
 
     return Model(img, img_features)
 
+def conv_lr(layer_x, filters, act=LeakyReLU, use_bias=False):
+    y = Conv2D(filters, kernel_size=3 \
+            , padding="same")(layer_x)
+    # layer_x = act(layer_x)
+    return y
+
 def network():
     # Model
     input_layer = Input(shape=[height,width,channels])
@@ -197,11 +203,7 @@ def gen_data(datas, mode=color_shift, batch_size=1):
 
         yield np.array(x_list), np.array(y_list)
 
-def conv_lr(layer_x, filters, act=LeakyReLU, use_bias=False):
-    y = Conv2D(filters, kernel_size=3 \
-            , padding="same")(layer_x)
-    # layer_x = act(layer_x)
-    return y
+
 
 def train(continue_flag=False):
     gen = gen_data(glob.glob('data/small/*.png'), batch_size=5)
