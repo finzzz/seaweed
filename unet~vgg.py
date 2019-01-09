@@ -12,6 +12,15 @@ from keras import backend as K
 from keras.callbacks import ModelCheckpoint
 from scipy.misc import imsave
 
+def vgg_net():
+    vgg = VGG19(weights="imagenet")
+    vgg.outputs = [vgg.layers[9].output]
+
+    img = Input(shape=[height,width,channels])
+    img_features = vgg(img)
+
+    return Model(img, img_features)
+
 #default loss: 
 l1 = "mean_absolute_error"
 l2 = "mean_squared_error"
@@ -192,15 +201,6 @@ def network():
     out = conv_lr(u5,channels,act=ReLU,use_bias=True)
 
     return Model(input_layer, out)
-
-def vgg_net():
-    vgg = VGG19(weights="imagenet")
-    vgg.outputs = [vgg.layers[9].output]
-
-    img = Input(shape=[height,width,channels])
-    img_features = vgg(img)
-
-    return Model(img, img_features)
 
 def train(continue_flag=False):
     gen = gen_data(glob.glob('data/small/*.png'), batch_size=5)
