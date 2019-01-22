@@ -31,6 +31,8 @@ parser.add_argument("-st", "--steps", help="steps per epoch",
                     type=int, default=180)
 parser.add_argument("-e", "--epoch", help="number of epoch",
                     type=int, default=3)
+parser.add_argument("--dir", default="./")
+parser.add_argument("--alias", default="")
 args = parser.parse_args()
 
 # channels
@@ -90,7 +92,7 @@ def train(continue_flag=False):
                         epochs=args.epoch, callbacks=[checkpoint])
 
 
-def test():
+def test(dir):
     model = load_model(args.model)
 
     model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99,
@@ -100,22 +102,23 @@ def test():
                             mult=args.mult, channels=channels)
 
     name = os.path.basename(args.image).split(".")[0]
-    imsave(name+'_x.png', x)
+    imsave(f"{dir}{name}_x.png", x)
 
     if args.mult[0] != 1:
-        imsave(name+'_truth.png', y)
+        imsave(f"{dir}{name}_truth.png", y)
 
     x = np.reshape(x, [1, height, width, channels])
     y = np.reshape(y, [1, height, width, channels])
     prediction = model.predict(x)
     prediction_metrics = model.evaluate(x=x, y=y, verbose=0)
-    imsave(f"{name}_y_{prediction_metrics:0.2f}.png", np.array(prediction)[0])
+    imsave(f"{dir}{args.alias}{name}_y_{prediction_metrics:0.2f}.png",
+           np.array(prediction)[0])
 
 
 if __name__ == "__main__":
     if args.type == "train":
         train()
     elif args.type == "test":
-        test()
+        test(dir=args.dir)
     elif args.type == "continue":
         train(continue_flag=True)
