@@ -2,7 +2,7 @@ from PIL import Image as im
 from PIL import ImageEnhance as en
 from PIL import ImageOps as ops
 import numpy as np
-import glob, argparse
+import glob, argparse, os.path
 from keras.layers import Conv2D, Input, MaxPool2D, UpSampling2D, Concatenate, LeakyReLU,ReLU
 from keras.optimizers import Adam
 from keras.models import Model, load_model
@@ -199,15 +199,17 @@ def test():
             
     x,y = preprocess(args.image)
 
-    name = (args.image).split("/")[1].split(".")[0]
+    name = os.path.basename(args.image).split(".")[0]
     imsave(name+'_x.png',x)
 
     if args.mult[0] != 1:
         imsave(name+'_truth.png',y)
 
     x = np.reshape(x,[1,height,width,channels])
-    image = np.array(model.predict(x))[0]
-    imsave(name+'_y.png', image)
+    y = np.reshape(y,[1,height,width,channels])
+    prediction = model.predict(x)
+    prediction_metrics = model.evaluate(x=x, y=y, verbose=0)
+    imsave(f"{name}_y_{prediction_metrics:0.2f}.png", np.array(prediction)[0])
 
 if __name__ == "__main__":
     if args.type == "train":

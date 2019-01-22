@@ -233,9 +233,11 @@ def test():
     if args.mult[0] != 1:
         imsave(name+'_truth.png',y)
 
-    x = np.reshape(x,[1,args.shape[1],args.shape[0],channels])
-    image = np.array(unet.predict(x))[0]
-    imsave(name+'_y.png', image)
+    x = np.reshape(x,[1,height,width,channels])
+    y = np.reshape(y,[1,height,width,channels])
+    prediction = unet.predict(x)
+    prediction_metrics = unet.evaluate(x=x, y=y, verbose=0)
+    imsave(f"{name}_y_{prediction_metrics:0.2f}.png", np.array(prediction)[0])
 
 if __name__ == "__main__":
     if args.type == "train":
