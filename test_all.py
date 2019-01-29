@@ -12,7 +12,7 @@ prog_unetvgg = prog + "unetvgg progressive/[0.7-1.1]dim128x96_s180e86_loss[1520.
 test_dir = "seaweed_test_img/"
 img_list = glob.glob(f"{test_dir}*.jpg")
 
-result_dir = "fuck_u/"
+result_dir = "res/"
 
 try:
     os.mkdir(result_dir)
@@ -20,7 +20,7 @@ except FileExistsError:
     pass
 
 cmd_0 = ("python",)
-cmd_1 = "test", "-mu", "0.7", "--alias"
+cmd_1 = "test", "-mu", "0.1", "--alias"
 cmd_2 = "--dir", result_dir, "-mod"
 
 cmd_unet = cmd_0 + ("unet.py",) + cmd_1
@@ -35,9 +35,9 @@ for img in img_list:
     subprocess.run(temp)
 
     # # base_unet_vgg = bv
-    temp = cmd_unet + ("bv",) + cmd_2 + (base_unetvgg, "-i", img)
+    temp = cmd_unet_vgg + ("bv",) + cmd_2 + (base_unetvgg, "-i", img)
     subprocess.run(temp)
 
     # # prog_unet_vgg = pv
-    temp = cmd_unet + ("pv",) + cmd_2 + (prog_unetvgg, "-i", img)
+    temp = cmd_unet_vgg + ("pv",) + cmd_2 + (prog_unetvgg, "-i", img)
     subprocess.run(temp)
