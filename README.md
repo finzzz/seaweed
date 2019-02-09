@@ -28,3 +28,6 @@ How to test:
 How to continue train:
 1. enter pipenv >> "pipenv shell"
 2. continue training >> "python unet.py continue -st 100 -e 3 -mod "previousmodel.h5" "
+
+
+ps. data folder contains DIV2K dataset
