@@ -6,7 +6,9 @@ from keras.models import Model
 
 def conv_lr(layer_x, filters, act=LeakyReLU, use_bias=False):
     y = Conv2D(filters, kernel_size=3, padding="same")(layer_x)
-    # layer_x = act(layer_x)
+    activation = act()
+    activation.alpha = 0.1
+    y = activation(y)
     return y
 
 
