@@ -108,7 +108,7 @@ def train(continue_flag=False):
                   epsilon=1e-8, clipnorm=10.), loss=args.loss)
 
     filepath = f"dim{args.shape[0]}x{args.shape[1]}_s{args.steps}"\
-               f"e{epoch:02d}_loss[{loss:.2f}].h5"
+               "e{epoch:02d}_loss[{loss:.2f}].h5"
     checkpoint = ModelCheckpoint(filepath, monitor='loss', save_best_only=True)
 
     model.summary()

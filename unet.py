@@ -84,8 +84,8 @@ def train(continue_flag=False):
     model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.99,
                   epsilon=1e-8, clipnorm=10.), loss=args.loss)
 
-    filepath = f"dim{width}x{height}_{alias}_s{args.steps}"\
-               f"e{epoch:02d}_loss[{loss:.2f}].h5"
+    filepath = f"dim{args.shape[0]}x{args.shape[1]}_s{args.steps}"\
+               "e{epoch:02d}_loss[{loss:.2f}].h5"
     checkpoint = ModelCheckpoint(filepath, monitor='loss', save_best_only=True)
 
     model.fit_generator(gen, steps_per_epoch=args.steps,
