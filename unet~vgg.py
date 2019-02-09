@@ -22,7 +22,7 @@ parser.add_argument("type", help="train/test/continue train model",
 parser.add_argument("-mod", "--model", help="model.h5 file")
 parser.add_argument("-i", "--image", help="image to test")
 parser.add_argument("-mu", "--mult", help="multiplier factor", nargs="+",
-                    type=float, default=[0.5, 0.7, 0.8, 1, 1.2, 1.3, 1.5])
+                    type=float, default=[0.75, 0.9, 1, 1.1])
 parser.add_argument("-mt", "--true_m", help="multiplier factor (true)",
                     type=float, default=1)
 parser.add_argument("-sh", "--shape", help="image shape [width,height]",
